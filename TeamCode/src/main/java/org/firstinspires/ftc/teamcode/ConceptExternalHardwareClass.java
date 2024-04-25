@@ -1,3 +1,5 @@
+package org.firstinspires.ftc.teamcode;
+
 /* Copyright (c) 2022 FIRST. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -27,12 +29,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.robotcontroller.external.samples;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
  * This OpMode illustrates how to use an external "hardware" class to modularize all the robot's sensors and actuators.
@@ -65,20 +65,21 @@ import com.qualcomm.robotcore.util.Range;
  */
 
 @TeleOp(name="Concept: Robot Hardware Class", group="Robot")
-@Disabled
 public class ConceptExternalHardwareClass extends LinearOpMode {
 
     // Create a RobotHardware object to be used to access robot hardware.
     // Prefix any hardware functions with "robot." to access this class.
     RobotHardware   robot       = new RobotHardware(this);
+    PIDController armController = new PIDController(0.1, 0, 0);
+
+    // variables used to control robot
+    double drive        = 0;
+    double turn         = 0;
+    double armPower = 0;
+    double handOffset   = 0;
 
     @Override
     public void runOpMode() {
-        double drive        = 0;
-        double turn         = 0;
-        double arm          = 0;
-        double handOffset   = 0;
-
         // initialize all the hardware, using the hardware class. See how clean and simple this is?
         robot.init();
 
@@ -98,29 +99,38 @@ public class ConceptExternalHardwareClass extends LinearOpMode {
             // Combine drive and turn for blended motion. Use RobotHardware class
             robot.driveRobot(drive, turn);
 
+            if (gamepad1.dpad_up) {
+                armController.setGoal(90);
+            }
+            if (gamepad1.dpad_down) {
+                armController.setGoal(20);
+            }
+            double armEncoder = robot.getArmEncoder();
+            robot.setArmPower(armController.calculateOutput(armEncoder));
+
+
             // Use gamepad left & right Bumpers to open and close the claw
             // Use the SERVO constants defined in RobotHardware class.
             // Each time around the loop, the servos will move by a small amount.
             // Limit the total offset to half of the full travel range
-            if (gamepad1.right_bumper)
-                handOffset += robot.HAND_SPEED;
-            else if (gamepad1.left_bumper)
-                handOffset -= robot.HAND_SPEED;
-            handOffset = Range.clip(handOffset, -0.5, 0.5);
+//            if (gamepad1.right_bumper)
+//                handOffset += robot.HAND_SPEED;
+//            else if (gamepad1.left_bumper)
+//                handOffset -= robot.HAND_SPEED;
+//            handOffset = Range.clip(handOffset, -0.5, 0.5);
 
             // Move both servos to new position.  Use RobotHardware class
-            robot.setHandPositions(handOffset);
+//            robot.setHandPositions(handOffset);
 
             // Use gamepad buttons to move arm up (Y) and down (A)
             // Use the MOTOR constants defined in RobotHardware class.
-            if (gamepad1.y)
-                arm = robot.ARM_UP_POWER;
-            else if (gamepad1.a)
-                arm = robot.ARM_DOWN_POWER;
-            else
-                arm = 0;
-
-            robot.setArmPower(arm);
+//            if (gamepad1.y)
+//                armPower = robot.ARM_UP_POWER;
+//            else if (gamepad1.a)
+//                armPower = robot.ARM_DOWN_POWER;
+//            else
+//                armPower = 0;
+//            robot.setArmPower(armPower);
 
             // Send telemetry messages to explain controls and show robot status
             telemetry.addData("Drive", "Left Stick");
@@ -131,7 +141,7 @@ public class ConceptExternalHardwareClass extends LinearOpMode {
 
             telemetry.addData("Drive Power", "%.2f", drive);
             telemetry.addData("Turn Power",  "%.2f", turn);
-            telemetry.addData("Arm Power",  "%.2f", arm);
+            telemetry.addData("Arm Power",  "%.2f", this.armPower);
             telemetry.addData("Hand Position",  "Offset = %.2f", handOffset);
             telemetry.update();
 
